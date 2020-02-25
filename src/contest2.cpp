@@ -33,6 +33,14 @@ int main(int argc, char **argv)
         /***YOUR CODE HERE***/
         // Use: boxes.coords
         // Use: robotPose.x, robotPose.y, robotPose.phi
+
+        // Transform boxes.coords to desired positions (nodes)
+        // start and end node are given as starting position
+        // apply heuristic to get cost of edges between nodes
+        // build graph
+        // solve travelling salesman problem
+        // navigate between the nodes in the order from above
+        
         imagePipeline.getTemplateID(boxes);
         ros::Duration(0.01).sleep();
     }
