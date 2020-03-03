@@ -1,16 +1,21 @@
+#include <cmath>
 #include <boxes.h>
 #include <navigation.h>
 #include <robot_pose.h>
 #include <imagePipeline.h>
+
+#define DISTANCE_TO_BOX 0.5
 
 int main(int argc, char **argv)
 {
     // Setup ROS.
     ros::init(argc, argv, "contest2");
     ros::NodeHandle n;
+
     // Robot pose object + subscriber.
     RobotPose robotPose(0, 0, 0);
     ros::Subscriber amclSub = n.subscribe("/amcl_pose", 1, &RobotPose::poseCallback, &robotPose);
+
     // Initialize box coordinates and templates
     Boxes boxes;
     if (!boxes.load_coords() || !boxes.load_templates())
@@ -24,8 +29,14 @@ int main(int argc, char **argv)
         std::cout << i << " x: " << boxes.coords[i][0] << " y: " << boxes.coords[i][1] << " z: "
                   << boxes.coords[i][2] << std::endl;
     }
+
+    std::vector<RobotPose> poses = boxesToRobotPoses(boxes);
+
+    Navigation::moveToGoal(poses[0].x, poses[0].y, poses[0].phi);
+
     // Initialize image objectand subscriber.
     ImagePipeline imagePipeline(n);
+
     // Execute strategy.
     while (ros::ok())
     {
@@ -45,4 +56,27 @@ int main(int argc, char **argv)
         ros::Duration(0.01).sleep();
     }
     return 0;
+}
+
+std::vector<RobotPose> boxesToRobotPoses(Boxes boxes)
+{
+    int num_boxes = boxes.coords.size();
+    std::vector<RobotPose> poses(num_boxes);
+
+    for (int i = 0; i < num_boxes; i++)
+    {
+        std::vector<float> coords = boxes.coords[i];
+
+        float boxX = coords[0];
+        float boxY = coords[1];
+        float boxPhi = coords[2];
+
+        float poseX = boxX + DISTANCE_TO_BOX * cos(boxPhi);
+        float poseY = boxY + DISTANCE_TO_BOX * sin(boxPhi);
+        float posePhi = boxPhi + M_PI;
+
+        poses[i] = RobotPose(poseX, poseY, posePhi);
+    }
+
+    return poses;
 }
