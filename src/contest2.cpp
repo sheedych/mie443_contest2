@@ -6,6 +6,29 @@
 
 #define DISTANCE_TO_BOX 0.5
 
+std::vector<RobotPose> boxesToRobotPoses(Boxes boxes)
+{
+    int num_boxes = boxes.coords.size();
+    std::vector<RobotPose> poses;
+
+    for (int i = 0; i < num_boxes; i++)
+    {
+        std::vector<float> coords = boxes.coords[i];
+
+        float boxX = coords[0];
+        float boxY = coords[1];
+        float boxPhi = coords[2];
+
+        float poseX = boxX + DISTANCE_TO_BOX * cos(boxPhi);
+        float poseY = boxY + DISTANCE_TO_BOX * sin(boxPhi);
+        float posePhi = boxPhi + M_PI;
+
+        poses.emplace_back(RobotPose(poseX, poseY, posePhi));
+    }
+
+    return poses;
+}
+
 int main(int argc, char **argv)
 {
     // Setup ROS.
@@ -56,27 +79,4 @@ int main(int argc, char **argv)
         ros::Duration(0.01).sleep();
     }
     return 0;
-}
-
-std::vector<RobotPose> boxesToRobotPoses(Boxes boxes)
-{
-    int num_boxes = boxes.coords.size();
-    std::vector<RobotPose> poses(num_boxes);
-
-    for (int i = 0; i < num_boxes; i++)
-    {
-        std::vector<float> coords = boxes.coords[i];
-
-        float boxX = coords[0];
-        float boxY = coords[1];
-        float boxPhi = coords[2];
-
-        float poseX = boxX + DISTANCE_TO_BOX * cos(boxPhi);
-        float poseY = boxY + DISTANCE_TO_BOX * sin(boxPhi);
-        float posePhi = boxPhi + M_PI;
-
-        poses[i] = RobotPose(poseX, poseY, posePhi);
-    }
-
-    return poses;
 }
