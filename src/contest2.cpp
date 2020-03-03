@@ -4,7 +4,7 @@
 #include <robot_pose.h>
 #include <imagePipeline.h>
 
-#define DISTANCE_TO_BOX 0.5
+#define DISTANCE_TO_BOX 0.05
 
 std::vector<RobotPose> boxesToRobotPoses(Boxes boxes)
 {
@@ -23,7 +23,7 @@ std::vector<RobotPose> boxesToRobotPoses(Boxes boxes)
         float poseY = boxY + DISTANCE_TO_BOX * sin(boxPhi);
         float posePhi = boxPhi + M_PI;
 
-        poses.emplace_back(RobotPose(poseX, poseY, posePhi));
+        poses.push_back(RobotPose(poseX, poseY, posePhi));
     }
 
     return poses;
@@ -55,6 +55,19 @@ int main(int argc, char **argv)
 
     std::vector<RobotPose> poses = boxesToRobotPoses(boxes);
 
+    for (int i = 0; i < boxes.coords.size(); ++i)
+    {
+        std::cout << "Pose coordinates: " << std::endl;
+        std::cout << i << " x: " << poses[i].x << " y: " << poses[i].y << " phi: "
+                  << poses[i].phi << std::endl;
+    }
+    //Navigation::moveToGoal(0, 0, 0);
+    //Navigation::moveToGoal(1, 1, 0);
+    //Navigation::moveToGoal(-1, -1, 0);
+    //Navigation::moveToGoal(1.5, 1, 0);
+
+    Navigation::moveToGoal(poses[0].x, poses[0].y, poses[0].phi);
+    Navigation::moveToGoal(poses[3].x, poses[3].y, poses[3].phi);
     Navigation::moveToGoal(poses[0].x, poses[0].y, poses[0].phi);
 
     // Initialize image objectand subscriber.
@@ -75,7 +88,7 @@ int main(int argc, char **argv)
         // solve travelling salesman problem
         // navigate between the nodes in the order from above
 
-        imagePipeline.getTemplateID(boxes);
+        // imagePipeline.getTemplateID(boxes);
         ros::Duration(0.01).sleep();
     }
     return 0;
