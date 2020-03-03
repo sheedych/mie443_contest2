@@ -40,7 +40,7 @@ int main(int argc, char **argv)
         // build graph
         // solve travelling salesman problem
         // navigate between the nodes in the order from above
-        
+
         imagePipeline.getTemplateID(boxes);
         ros::Duration(0.01).sleep();
     }
