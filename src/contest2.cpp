@@ -2,6 +2,14 @@
 #include <navigation.h>
 #include <robot_pose.h>
 #include <imagePipeline.h>
+#include "LaserData.hpp"
+
+
+LaserData laserData;
+void laserCallback(const sensor_msgs::LaserScan::ConstPtr &msg)
+{
+     laserData.updateState(msg);
+}  
 
 int main(int argc, char **argv)
 {
@@ -11,6 +19,7 @@ int main(int argc, char **argv)
     // Robot pose object + subscriber.
     RobotPose robotPose(0, 0, 0);
     ros::Subscriber amclSub = n.subscribe("/amcl_pose", 1, &RobotPose::poseCallback, &robotPose);
+    ros::Subscriber laser_sub = n.subscribe("scan", 10, &laserCallback);
     // Initialize box coordinates and templates
     Boxes boxes;
     if (!boxes.load_coords() || !boxes.load_templates())
@@ -40,8 +49,9 @@ int main(int argc, char **argv)
         // build graph
         // solve travelling salesman problem
         // navigate between the nodes in the order from above
-        
-        imagePipeline.getTemplateID(boxes);
+        //std::vector<float> coords = laserData.getClosestObjCoords();
+        //std::cout << "First laser: " << coords[0] << " Second Laser: " << coords[1] << std::endl;
+        imagePipeline.getTemplateID(boxes, laserData);
         ros::Duration(0.01).sleep();
     }
     return 0;

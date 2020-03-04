@@ -11,6 +11,7 @@
 #include "opencv2/calib3d.hpp"
 #include "opencv2/xfeatures2d.hpp"
 #include "opencv2/imgproc.hpp"
+#include "LaserData.hpp"
 
 class ImagePipeline
 {
@@ -22,5 +23,5 @@ private:
 public:
     ImagePipeline(ros::NodeHandle &n);
     void imageCallback(const sensor_msgs::ImageConstPtr &msg);
-    int getTemplateID(Boxes &boxes);
+    int getTemplateID(Boxes &boxes, LaserData laserData);
 };

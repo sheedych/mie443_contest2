@@ -1,7 +1,7 @@
 #include <imagePipeline.h>
-
+#include <math.h>
 #define IMAGE_TYPE sensor_msgs::image_encodings::BGR8
-#define IMAGE_TOPIC "camera/image" // kinect:"camera/rgb/image_raw" webcam:"camera/image"
+#define IMAGE_TOPIC "camera/rgb/image_raw" // kinect:"camera/rgb/image_raw" webcam:"camera/image"
 using namespace cv;
 using namespace cv::xfeatures2d;
 
@@ -31,7 +31,7 @@ void ImagePipeline::imageCallback(const sensor_msgs::ImageConstPtr &msg)
     }
 }
 
-int ImagePipeline::getTemplateID(Boxes &boxes)
+int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
 {
     int template_id = -1;
     if (!isValid)
@@ -50,55 +50,127 @@ int ImagePipeline::getTemplateID(Boxes &boxes)
         /***YOUR CODE HERE***/
         // Use: boxes.templates
 
+        //vector stuff here copy stuff in
         int minHessian = 400;
-        Mat img_object = boxes.templates.front();
         Mat img_scene = img;
+        Mat best_img_object;
+        Mat best_descriptors_object;
+        std::vector<DMatch> best_matches;
+        std::vector<KeyPoint> best_keypoints_object, best_keypoints_scene;
+        double global_min_dist = 100;
+        double global_max_dist = 0;
+        double min_dist_threshold = 0.1;
+        const float ratio = 0.8;
 
-        if (!img_object.data || !img_scene.data)
-            std::cout << "cant read" << std::endl;
 
-        // Steps 1 and 2, detect the keypoints and calculate descriptors uding SURF
-        // TODO: Change this to Lowe's thiny
+        //preprocess
+        std::cout << "Width: " << img_scene.cols << std::endl;
+        std::cout << "Height: " << img_scene.rows << std::endl;
 
-        Ptr<SURF> detector = SURF::create(minHessian);
-
-        std::vector<KeyPoint> keypoints_object, keypoints_scene;
-        Mat descriptors_object, descriptors_scene;
-
-        detector->detectAndCompute(img_object, Mat(), keypoints_object, descriptors_object);
-        detector->detectAndCompute(img_scene, Mat(), keypoints_scene, descriptors_scene);
-
-        FlannBasedMatcher matcher;
-        std::vector<DMatch> matches;
-        matcher.match(descriptors_object, descriptors_scene, matches);
-
-        double max_dist = 0;
-        double min_dist = 100;
-
-        for (int i = 0; i < descriptors_object.rows; i++)
-        {
-            double dist = matches[i].distance;
-            if (dist < min_dist)
-                min_dist = dist;
-            if (dist > max_dist)
-                max_dist = dist;
+        std::vector<float> coords = laserData.getClosestObjCoords();
+        float leftBound = coords[0];
+        float rightBound = coords[1];
+        if((leftBound < 0) || (rightBound < 0)) {
+            leftBound = 20;
+            rightBound = 20;
         }
 
-        printf(" -- Max dist : %f \n", max_dist);
-        printf(" -- Min dist : %f \n", min_dist);
+
+        int height = img_scene.rows;
+        int width = img_scene.cols;
+        std::cout << rightBound << " right bound " << std::endl;
+        float rightScreen = width - rightBound - 1;
+        float leftScreen = width - leftBound - 1;
+
+        for(int i = rightScreen; i < width; i++) {
+            for(int j = 0; j < height; j++){
+//                img_scene.at<cv::Vec3b>(j, i)[0] = 0;
+//                img_scene.at<cv::Vec3b>(j, i)[1] = 0;
+//                img_scene.at<cv::Vec3b>(j, i)[2] = 0;
+            }
+        }
+        for(int i = 0; i <= leftScreen; i++) {
+            for(int j = 0; j < height; j++){
+//                img_scene.at<cv::Vec3b>(j, i)[0] = 0;
+//                img_scene.at<cv::Vec3b>(j, i)[1] = 0;
+//                img_scene.at<cv::Vec3b>(j, i)[2] = 0;
+            }
+        }
+
+        for(std::vector<Mat>::iterator it = boxes.templates.begin() ; it != boxes.templates.end(); ++it) {
+            std::cout << "iterating" << std::endl;
+            //grab the image object template thing
+            Mat img_object = *it;
+
+            //if i cannot read the image, freak out
+            if (!img_object.data || !img_scene.data)
+                std::cout << "cant read" << std::endl;
+            Ptr<SURF> detector = SURF::create(minHessian);
+
+            std::vector<KeyPoint> keypoints_object, keypoints_scene;
+            Mat descriptors_object, descriptors_scene;
+
+            detector->detectAndCompute(img_object, Mat(), keypoints_object, descriptors_object);
+            detector->detectAndCompute(img_scene, Mat(), keypoints_scene, descriptors_scene);
+
+            
+            double max_dist = 0;
+            double min_dist = 100;
+            int besti = 0;
+
+            FlannBasedMatcher matcher;
+            //BFMatcher matcher;
+            //std::vector<std::vector<DMatch>> matches;
+            std::vector<DMatch> matches;
+            matcher.match(descriptors_object, descriptors_scene, matches);
+            //matcher.knnMatch(descriptors_object, descriptors_scene, matches, 2);
+
+
+           // for(int i = 0; i < matches.size(); i++) {
+           //     if(matches[i][0].distance < min_dist){
+           //         min_dist = matches[i][0].distance;
+           //         besti = i;
+           //     }
+           // }
+            // get the minimum distance per one image
+            for (int i = 0; i < descriptors_object.rows; i++)
+            {
+                double dist = matches[i].distance;
+                if (dist < min_dist)
+                    min_dist = dist;
+                if (dist > max_dist)
+                    max_dist = dist;
+            }
+
+            // criteria for determining the best image
+            // change this if criteria doesnt work
+            if(min_dist < global_min_dist) {
+                global_min_dist = min_dist;
+                best_img_object = img_object;
+                best_matches = matches;
+                best_keypoints_scene = keypoints_scene;
+                best_keypoints_object = keypoints_object;
+                global_max_dist = max_dist;
+                best_descriptors_object = descriptors_object;
+            }
+        }
+
+
+        printf(" -- Max dist : %f \n", global_max_dist);
+        printf(" -- Min dist : %f \n", global_min_dist);
 
         std::vector<DMatch> good_matches;
 
-        for (int i = 0; i < descriptors_object.rows; i++)
+        for (int i = 0; i < best_descriptors_object.rows; i++)
         {
-            if (matches[i].distance < 3 * min_dist)
+            if (best_matches[i].distance < 3 * global_min_dist)
             {
-                good_matches.push_back(matches[i]);
+                good_matches.push_back(best_matches[i]);
             }
         }
 
         Mat img_matches;
-        drawMatches(img_object, keypoints_object, img_scene, keypoints_scene, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+        drawMatches(best_img_object, best_keypoints_object, img_scene, best_keypoints_scene, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 
         std::vector<Point2f> obj;
         std::vector<Point2f> scene;
@@ -106,31 +178,57 @@ int ImagePipeline::getTemplateID(Boxes &boxes)
         for (int i = 0; i < good_matches.size(); i++)
         {
 
-            obj.push_back(keypoints_object[good_matches[i].queryIdx].pt);
-            scene.push_back(keypoints_scene[good_matches[i].trainIdx].pt);
+            obj.push_back(best_keypoints_object[good_matches[i].queryIdx].pt);
+            scene.push_back(best_keypoints_scene[good_matches[i].trainIdx].pt);
         }
 
-        Mat H = findHomography(obj, scene, RANSAC);
+        //put an if statement around this making sure obj and scene contain at least 4 things
+        //woooo dont forget DONT FORGET or we will FUG up
+        try{
+        //if(obj.size() >= 4 && scene.size() >= 4) {
+        if(1) {
+            Mat H = findHomography(obj, scene, RANSAC);
 
-        //--Get the corners from the image_1 (the object to be "detected")
-        std::vector<Point2f> obj_corners(4);
-        obj_corners[0] = cvPoint(0, 0);
-        obj_corners[1] = cvPoint(img_object.cols, 0);
-        obj_corners[2] = cvPoint(img_object.cols, img_object.rows);
-        obj_corners[3] = cvPoint(0, img_object.rows);
-        std::vector<Point2f> scene_corners(4);
+            //--Get the corners from the image_1 (the object to be "detected")
+            std::vector<Point2f> obj_corners(4);
+            obj_corners[0] = cvPoint(0, 0);
+            obj_corners[1] = cvPoint(best_img_object.cols, 0);
+            obj_corners[2] = cvPoint(best_img_object.cols, best_img_object.rows);
+            obj_corners[3] = cvPoint(0, best_img_object.rows);
+            std::vector<Point2f> scene_corners(4);
 
-        perspectiveTransform(obj_corners, scene_corners, H);
+            if(!H.empty()) {
+            perspectiveTransform(obj_corners, scene_corners, H);
+            }
 
-        //-- Draw lines between the corners (the mapped object in the scene - image_2)
-        line(img_matches, scene_corners[0] + Point2f(img_object.cols, 0), scene_corners[1] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
-        line(img_matches, scene_corners[1] + Point2f(img_object.cols, 0), scene_corners[2] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
-        line(img_matches, scene_corners[2] + Point2f(img_object.cols, 0), scene_corners[3] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
-        line(img_matches, scene_corners[3] + Point2f(img_object.cols, 0), scene_corners[0] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
+            //-- Draw lines between the corners (the mapped object in the scene - image_2)
+            line(img_matches, scene_corners[0] + Point2f(best_img_object.cols, 0), scene_corners[1] + Point2f(best_img_object.cols, 0), Scalar(0, 255, 0), 4);
+            line(img_matches, scene_corners[1] + Point2f(best_img_object.cols, 0), scene_corners[2] + Point2f(best_img_object.cols, 0), Scalar(0, 255, 0), 4);
+            line(img_matches, scene_corners[2] + Point2f(best_img_object.cols, 0), scene_corners[3] + Point2f(best_img_object.cols, 0), Scalar(0, 255, 0), 4);
+            line(img_matches, scene_corners[3] + Point2f(best_img_object.cols, 0), scene_corners[0] + Point2f(best_img_object.cols, 0), Scalar(0, 255, 0), 4);
 
-        std::cout << "Displaying image now" << std::endl;
-        cv::imshow("view", img_matches);
-        cv::waitKey(10);
+            //Point2f point1 = scene_corners[0] + Point2f(best_img_object.cols, 0);
+            //Point2f point2 = scene_corners[2] + Point2f(best_img_object.cols, 0);
+            //Point2f point3 = scene_corners[3] + Point2f(best_img_object.cols, 0);
+            //Point2f point4 = scene_corners[4] + Point2f(best_img_object.cols, 0);
+            //double side1, side2, side3, side4;
+            //side1 = hypot((point1.y - point2.y
+            //std::cout << point1.y  << " " << point1.x << std::endl;
+            //std::cout << point2.y  << " " << point4.x << std::endl;
+            //std::cout << point3.y  << " " << point3.x << std::endl;
+            //std::cout << point4.y  << " " << point2.x << std::endl;
+            std::cout << "Displaying image now" << std::endl;
+
+            cv::imshow("view", img_matches);
+            cv::waitKey(10);
+        }
+        else {
+            std::cout << "The object or scene was not big enough" << std::endl;
+        }
+        }
+    catch(int e) {
+        return 0;
+    }
     }
     return template_id;
 }
