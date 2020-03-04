@@ -1,5 +1,9 @@
 ## Simulation Launch Instructions
 
+* ```roslaunch mie443_contest2 turtlebot_world.launch world:=1```
+* ```roslaunch turtlebot_gazebo amcl_demo.launch map_file:=/home/<username>/catkin_ws/src/mie443_contest2/maps/map_1.yaml``` (Note: an absolute path to the map file is required)
+* ``` ```
+
 ## Regular Launch Instructions
 
 ## Regenerating Compile Commands
