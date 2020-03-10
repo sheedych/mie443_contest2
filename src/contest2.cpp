@@ -123,7 +123,7 @@ int main(int argc, char **argv)
     RobotPose robotPose(0, 0, 0);
     ros::Subscriber amclSub = n.subscribe("/amcl_pose", 1, &RobotPose::poseCallback, &robotPose);
     ros::Subscriber laser_sub = n.subscribe("scan", 10, &laserCallback);
-    
+
     // Initialize box coordinates and templates.
     Boxes boxes;
     if (!boxes.load_coords() || !boxes.load_templates())
@@ -168,12 +168,10 @@ int main(int argc, char **argv)
     // Initialize image object and subscriber.
     ImagePipeline imagePipeline(n);
 
-
     for (int i = 0; i < bestPath.size(); i++)
     {
         RobotPose pose = bestPath[i];
         std::cout << "current pose: " << pose.x << " " << pose.y << " " << pose.phi << std::endl;
-        Navigation::moveToGoal(pose.x, pose.y, pose.phi);
     }
 
     // Initialize FSM variables.
@@ -185,34 +183,41 @@ int main(int argc, char **argv)
     while (ros::ok())
     {
         ros::spinOnce();
-        if (state == INITIALIZING){
+        if (state == INITIALIZING)
+        {
             state = MOVING_TO_GOAL;
         }
-        else if (state == MOVING_TO_GOAL){
+        else if (state == MOVING_TO_GOAL)
+        {
             RobotPose nextPose = bestPath[currentPoseIndex];
-            Navigation::moveToGoal(nextPose.x, nextPose.y, nextPose.z);
+            Navigation::moveToGoal(nextPose.x, nextPose.y, nextPose.phi);
 
             currentPoseIndex++;
-            if (currentPoseIndex <= numBoxes + 1){
+            if (currentPoseIndex <= numBoxes + 1)
+            {
                 state = CAPTURING_IMAGE;
             }
-            else{
+            else
+            {
                 state = FINISHED;
             }
-
         }
-        else if (state == CAPTURING_IMAGE){
+        else if (state == CAPTURING_IMAGE)
+        {
             int id = imagePipeline.getTemplateID(boxes, laserData);
-            // TODO do something with id.
-            
+
             imageCaptureAttempts++;
-            if (imageCaptureAttempts == MAX_IMAGE_CAPTURE_ATTEMPTS)
+            if (id >= 0 || imageCaptureAttempts == MAX_IMAGE_CAPTURE_ATTEMPTS)
             {
+                // TODO do something with id.
+                std::cout << "image id" << id << std::endl;
+
                 imageCaptureAttempts = 0;
                 state = MOVING_TO_GOAL;
             }
         }
-        else if (state == FINISHED){
+        else if (state == FINISHED)
+        {
             // Do nothing.
         }
         ros::Duration(0.01).sleep();

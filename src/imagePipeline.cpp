@@ -1,7 +1,7 @@
 #include <imagePipeline.h>
 #include <math.h>
 #define IMAGE_TYPE sensor_msgs::image_encodings::BGR8
-#define IMAGE_TOPIC "camera/image" // kinect:"camera/rgb/image_raw" webcam:"camera/image"
+#define IMAGE_TOPIC "camera/rgb/image_raw" // kinect:"camera/rgb/image_raw" webcam:"camera/image"
 using namespace cv;
 using namespace cv::xfeatures2d;
 
@@ -58,12 +58,8 @@ int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
         double min_dist_threshold = 0.1;
         const float ratio = 0.7f;
 
-
-
-
-
-
-        for(std::vector<Mat>::iterator it = boxes.templates.begin() ; it != boxes.templates.end(); ++it) {
+        for (std::vector<Mat>::iterator it = boxes.templates.begin(); it != boxes.templates.end(); ++it)
+        {
             std::cout << "iterating" << std::endl;
             //grab the image object template thing
             Mat img_object = *it;
@@ -79,7 +75,6 @@ int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
             detector->detectAndCompute(img_object, Mat(), keypoints_object, descriptors_object);
             detector->detectAndCompute(img_scene, Mat(), keypoints_scene, descriptors_scene);
 
-            
             double max_dist = 0;
             double min_dist = 100;
             int besti = 0;
@@ -91,69 +86,73 @@ int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
             matcher.knnMatch(descriptors_object, descriptors_scene, matches, 2);
 
             std::vector<DMatch> good_matches;
-            for(int i = 0; i < matches.size(); i++) {
-                if(matches[i][0].distance < ratio*matches[i][1].distance){
+            for (int i = 0; i < matches.size(); i++)
+            {
+                if (matches[i][0].distance < ratio * matches[i][1].distance)
+                {
                     good_matches.push_back(matches[i][0]);
                 }
             }
 
             int num_good_matches = good_matches.size();
 
+            Mat img_matches;
+            drawMatches(img_object, keypoints_object, img_scene, keypoints_scene, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 
+            std::vector<Point2f> obj;
+            std::vector<Point2f> scene;
 
+            for (int i = 0; i < good_matches.size(); i++)
+            {
 
-        Mat img_matches;
-        drawMatches(img_object, keypoints_object, img_scene, keypoints_scene, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-
-        std::vector<Point2f> obj;
-        std::vector<Point2f> scene;
-
-        for (int i = 0; i < good_matches.size(); i++)
-        {
-
-            obj.push_back(keypoints_object[good_matches[i].queryIdx].pt);
-            scene.push_back(keypoints_scene[good_matches[i].trainIdx].pt);
-        }
-
-        //put an if statement around this making sure obj and scene contain at least 4 things
-        //woooo dont forget DONT FORGET or we will FUG up
-        try{
-        //if(obj.size() >= 4 && scene.size() >= 4) {
-        if(num_good_matches >= 70) {
-            Mat H = findHomography(obj, scene, RANSAC);
-
-            //--Get the corners from the image_1 (the object to be "detected")
-            std::vector<Point2f> obj_corners(4);
-            obj_corners[0] = cvPoint(0, 0);
-            obj_corners[1] = cvPoint(img_object.cols, 0);
-            obj_corners[2] = cvPoint(img_object.cols, img_object.rows);
-            obj_corners[3] = cvPoint(0, img_object.rows);
-            std::vector<Point2f> scene_corners(4);
-
-            if(!H.empty()) {
-            perspectiveTransform(obj_corners, scene_corners, H);
+                obj.push_back(keypoints_object[good_matches[i].queryIdx].pt);
+                scene.push_back(keypoints_scene[good_matches[i].trainIdx].pt);
             }
 
-            //-- Draw lines between the corners (the mapped object in the scene - image_2)
-            line(img_matches, scene_corners[0] + Point2f(img_object.cols, 0), scene_corners[1] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
-            line(img_matches, scene_corners[1] + Point2f(img_object.cols, 0), scene_corners[2] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
-            line(img_matches, scene_corners[2] + Point2f(img_object.cols, 0), scene_corners[3] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
-            line(img_matches, scene_corners[3] + Point2f(img_object.cols, 0), scene_corners[0] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
+            //put an if statement around this making sure obj and scene contain at least 4 things
+            //woooo dont forget DONT FORGET or we will FUG up
+            try
+            {
+                //if(obj.size() >= 4 && scene.size() >= 4) {
+                if (num_good_matches >= 70)
+                {
+                    Mat H = findHomography(obj, scene, RANSAC);
 
-            std::cout << "Displaying image" << template_id << "  now" << std::endl;
+                    //--Get the corners from the image_1 (the object to be "detected")
+                    std::vector<Point2f> obj_corners(4);
+                    obj_corners[0] = cvPoint(0, 0);
+                    obj_corners[1] = cvPoint(img_object.cols, 0);
+                    obj_corners[2] = cvPoint(img_object.cols, img_object.rows);
+                    obj_corners[3] = cvPoint(0, img_object.rows);
+                    std::vector<Point2f> scene_corners(4);
 
-            cv::imshow("view", img_matches);
-            cv::waitKey(10);
-            return template_id;
-        }
-        else {
-            std::cout << "The object or scene was not big enough" << std::endl;
-        }
-        }
-    catch(int e) {
-        return -1;
-    }
-    template_id++;
+                    if (!H.empty())
+                    {
+                        perspectiveTransform(obj_corners, scene_corners, H);
+                    }
+
+                    //-- Draw lines between the corners (the mapped object in the scene - image_2)
+                    line(img_matches, scene_corners[0] + Point2f(img_object.cols, 0), scene_corners[1] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
+                    line(img_matches, scene_corners[1] + Point2f(img_object.cols, 0), scene_corners[2] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
+                    line(img_matches, scene_corners[2] + Point2f(img_object.cols, 0), scene_corners[3] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
+                    line(img_matches, scene_corners[3] + Point2f(img_object.cols, 0), scene_corners[0] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
+
+                    std::cout << "Displaying image" << template_id << "  now" << std::endl;
+
+                    cv::imshow("view", img_matches);
+                    cv::waitKey(10);
+                    return template_id;
+                }
+                else
+                {
+                    std::cout << "The object or scene was not big enough" << std::endl;
+                }
+            }
+            catch (int e)
+            {
+                return -1;
+            }
+            template_id++;
         }
     }
     return -1;
