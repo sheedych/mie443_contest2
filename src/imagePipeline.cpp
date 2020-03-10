@@ -1,7 +1,7 @@
 #include <imagePipeline.h>
 #include <math.h>
 #define IMAGE_TYPE sensor_msgs::image_encodings::BGR8
-#define IMAGE_TOPIC "camera/rgb/image_raw" // kinect:"camera/rgb/image_raw" webcam:"camera/image"
+#define IMAGE_TOPIC "camera/image" // kinect:"camera/rgb/image_raw" webcam:"camera/image"
 using namespace cv;
 using namespace cv::xfeatures2d;
 
@@ -33,7 +33,7 @@ void ImagePipeline::imageCallback(const sensor_msgs::ImageConstPtr &msg)
 
 int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
 {
-    int template_id = -1;
+    int template_id = 0;
     if (!isValid)
     {
         std::cout << "ERROR: INVALID IMAGE!" << std::endl;
@@ -59,39 +59,9 @@ int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
         const float ratio = 0.7f;
 
 
-        //preprocess
-        std::cout << "Width: " << img_scene.cols << std::endl;
-        std::cout << "Height: " << img_scene.rows << std::endl;
-
-        std::vector<float> coords = laserData.getClosestObjCoords();
-        float leftBound = coords[0];
-        float rightBound = coords[1];
-        if((leftBound < 0) || (rightBound < 0)) {
-            leftBound = 0;
-            rightBound = 600;
-        }
 
 
-        int height = img_scene.rows;
-        int width = img_scene.cols;
-        std::cout << rightBound << " right bound " << std::endl;
-        float rightScreen = width - rightBound - 1;
-        float leftScreen = width - leftBound - 1;
 
-        for(int i = rightScreen; i < width; i++) {
-            for(int j = 0; j < height; j++){
-//                img_scene.at<cv::Vec3b>(j, i)[0] = 0;
-//                img_scene.at<cv::Vec3b>(j, i)[1] = 0;
-//                img_scene.at<cv::Vec3b>(j, i)[2] = 0;
-            }
-        }
-        for(int i = 0; i <= leftScreen; i++) {
-            for(int j = 0; j < height; j++){
-//                img_scene.at<cv::Vec3b>(j, i)[0] = 0;
-//                img_scene.at<cv::Vec3b>(j, i)[1] = 0;
-//                img_scene.at<cv::Vec3b>(j, i)[2] = 0;
-            }
-        }
 
         for(std::vector<Mat>::iterator it = boxes.templates.begin() ; it != boxes.templates.end(); ++it) {
             std::cout << "iterating" << std::endl;
@@ -129,8 +99,6 @@ int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
 
             int num_good_matches = good_matches.size();
 
-        printf(" -- Max dist : %f \n", global_max_dist);
-        printf(" -- Min dist : %f \n", global_min_dist);
 
 
 
@@ -172,20 +140,21 @@ int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
             line(img_matches, scene_corners[2] + Point2f(img_object.cols, 0), scene_corners[3] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
             line(img_matches, scene_corners[3] + Point2f(img_object.cols, 0), scene_corners[0] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
 
-            std::cout << "Displaying image now" << std::endl;
+            std::cout << "Displaying image" << template_id << "  now" << std::endl;
 
             cv::imshow("view", img_matches);
             cv::waitKey(10);
+            return template_id;
         }
         else {
             std::cout << "The object or scene was not big enough" << std::endl;
         }
         }
     catch(int e) {
-        return 0;
+        return -1;
     }
     template_id++;
         }
     }
-    return template_id;
+    return -1;
 }

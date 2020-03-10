@@ -51,7 +51,8 @@ int main(int argc, char **argv)
         // navigate between the nodes in the order from above
         //std::vector<float> coords = laserData.getClosestObjCoords();
         //std::cout << "First laser: " << coords[0] << " Second Laser: " << coords[1] << std::endl;
-        imagePipeline.getTemplateID(boxes, laserData);
+        int id = imagePipeline.getTemplateID(boxes, laserData);
+        std::cout << id << std::endl;
         ros::Duration(0.01).sleep();
     }
     return 0;
