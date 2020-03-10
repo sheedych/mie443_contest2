@@ -14,6 +14,15 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr &msg)
 }
 
 #define DISTANCE_TO_BOX 0.6
+#define MAX_IMAGE_CAPTURE_ATTEMPTS 5
+
+enum FsmState
+{
+    INITIALIZING,
+    CAPTURING_IMAGE,
+    MOVING_TO_GOAL,
+    FINISHED
+};
 
 std::vector<RobotPose> boxesToRobotPoses(Boxes boxes)
 {
@@ -110,48 +119,55 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "contest2");
     ros::NodeHandle n;
 
-    // Robot pose object + subscriber.
+    // Robot pose object + subscribers.
     RobotPose robotPose(0, 0, 0);
     ros::Subscriber amclSub = n.subscribe("/amcl_pose", 1, &RobotPose::poseCallback, &robotPose);
     ros::Subscriber laser_sub = n.subscribe("scan", 10, &laserCallback);
-    // Initialize box coordinates and templates
+    
+    // Initialize box coordinates and templates.
     Boxes boxes;
     if (!boxes.load_coords() || !boxes.load_templates())
     {
         std::cout << "ERROR: could not load coords or templates" << std::endl;
         return -1;
     }
-    // print out box coordinates
-    for (int i = 0; i < boxes.coords.size(); ++i)
+
+    int numBoxes = boxes.coords.size();
+
+    // Print out box coordinates.
+    for (int i = 0; i < numBoxes; ++i)
     {
         std::cout << "Box coordinates: " << std::endl;
         std::cout << i << " x: " << boxes.coords[i][0] << " y: " << boxes.coords[i][1] << " z: "
                   << boxes.coords[i][2] << std::endl;
     }
-    // transform box coordinates to robot poses
+
+    // Transform box coordinates to robot poses.
     std::vector<RobotPose> poses = boxesToRobotPoses(boxes);
 
-    // print out robot poses
-    for (int i = 0; i < boxes.coords.size(); ++i)
+    // Print out robot poses.
+    for (int i = 0; i < numBoxes; ++i)
     {
         std::cout << "Pose coordinates: " << std::endl;
         std::cout << i << " x: " << poses[i].x << " y: " << poses[i].y << " phi: "
                   << poses[i].phi << std::endl;
     }
 
-    // get robotPose
+    // Ensure that current robot pose is updated by subscriber.
     ros::Duration(2).sleep();
     ros::spinOnce();
 
-    // print out robot pose
+    // Print out current robot pose.
     std::cout << "Robot pose: " << std::endl;
     std::cout << " x: " << robotPose.x << " y: " << robotPose.y << " phi: "
               << robotPose.phi << std::endl;
 
+    // Determine best path.
     std::vector<RobotPose> bestPath = solveTravellingSalesman(poses, robotPose);
 
-    // Initialize image objectand subscriber.
+    // Initialize image object and subscriber.
     ImagePipeline imagePipeline(n);
+
 
     for (int i = 0; i < bestPath.size(); i++)
     {
@@ -160,27 +176,45 @@ int main(int argc, char **argv)
         Navigation::moveToGoal(pose.x, pose.y, pose.phi);
     }
 
-    while (ros::ok())
-    {
-    }
+    // Initialize FSM variables.
+    FsmState state = INITIALIZING;
+    int currentPoseIndex = 0;
+    int imageCaptureAttempts = 0;
 
     // Execute strategy.
     while (ros::ok())
     {
         ros::spinOnce();
-        /***YOUR CODE HERE***/
-        // Use: boxes.coords
-        // Use: robotPose.x, robotPose.y, robotPose.phi
+        if (state == INITIALIZING){
+            state = MOVING_TO_GOAL;
+        }
+        else if (state == MOVING_TO_GOAL){
+            RobotPose nextPose = bestPath[currentPoseIndex];
+            Navigation::moveToGoal(nextPose.x, nextPose.y, nextPose.z);
 
-        // start and end node are given as starting position
-        // apply heuristic to get cost of edges between nodes
-        // build graph
-        // solve travelling salesman problem
-        // navigate between the nodes in the order from above
-        //std::vector<float> coords = laserData.getClosestObjCoords();
-        //std::cout << "First laser: " << coords[0] << " Second Laser: " << coords[1] << std::endl;
-        int id = imagePipeline.getTemplateID(boxes, laserData);
-        std::cout << id << std::endl;
+            currentPoseIndex++;
+            if (currentPoseIndex <= numBoxes + 1){
+                state = CAPTURING_IMAGE;
+            }
+            else{
+                state = FINISHED;
+            }
+
+        }
+        else if (state == CAPTURING_IMAGE){
+            int id = imagePipeline.getTemplateID(boxes, laserData);
+            // TODO do something with id.
+            
+            imageCaptureAttempts++;
+            if (imageCaptureAttempts == MAX_IMAGE_CAPTURE_ATTEMPTS)
+            {
+                imageCaptureAttempts = 0;
+                state = MOVING_TO_GOAL;
+            }
+        }
+        else if (state == FINISHED){
+            // Do nothing.
+        }
         ros::Duration(0.01).sleep();
     }
     return 0;
