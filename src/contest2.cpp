@@ -13,7 +13,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr &msg)
     laserData.updateState(msg);
 }
 
-#define DISTANCE_TO_BOX 0.2
+#define DISTANCE_TO_BOX 0.6
 
 std::vector<RobotPose> boxesToRobotPoses(Boxes boxes)
 {
@@ -139,8 +139,30 @@ int main(int argc, char **argv)
                   << poses[i].phi << std::endl;
     }
 
+    // get robotPose
+    ros::Duration(2).sleep();
+    ros::spinOnce();
+
+    // print out robot pose
+    std::cout << "Robot pose: " << std::endl;
+    std::cout << " x: " << robotPose.x << " y: " << robotPose.y << " phi: "
+              << robotPose.phi << std::endl;
+
+    std::vector<RobotPose> bestPath = solveTravellingSalesman(poses, robotPose);
+
     // Initialize image objectand subscriber.
     ImagePipeline imagePipeline(n);
+
+    for (int i = 0; i < bestPath.size(); i++)
+    {
+        RobotPose pose = bestPath[i];
+        std::cout << "current pose: " << pose.x << " " << pose.y << " " << pose.phi << std::endl;
+        Navigation::moveToGoal(pose.x, pose.y, pose.phi);
+    }
+
+    while (ros::ok())
+    {
+    }
 
     // Execute strategy.
     while (ros::ok())
