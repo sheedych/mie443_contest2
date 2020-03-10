@@ -25,7 +25,7 @@ std::vector<RobotPose> boxesToRobotPoses(Boxes boxes)
         float poseY = boxY + DISTANCE_TO_BOX * sin(boxPhi);
         float posePhi = boxPhi + M_PI;
 
-        poses.emplace_back(RobotPose(poseX, poseY, posePhi));
+        poses.push_back(RobotPose(poseX, poseY, posePhi));
     }
 
     return poses;
@@ -114,18 +114,22 @@ int main(int argc, char **argv)
         std::cout << "ERROR: could not load coords or templates" << std::endl;
         return -1;
     }
+    // print out box coordinates
     for (int i = 0; i < boxes.coords.size(); ++i)
     {
         std::cout << "Box coordinates: " << std::endl;
         std::cout << i << " x: " << boxes.coords[i][0] << " y: " << boxes.coords[i][1] << " z: "
                   << boxes.coords[i][2] << std::endl;
     }
-
+    // transform box coordinates to robot poses
     std::vector<RobotPose> poses = boxesToRobotPoses(boxes);
 
-    for (int i = 0; i < poses.size(); i++)
+    // print out robot poses
+    for (int i = 0; i < boxes.coords.size(); ++i)
     {
-        Navigation::moveToGoal(poses[i].x, poses[i].y, poses[i].phi);
+        std::cout << "Pose coordinates: " << std::endl;
+        std::cout << i << " x: " << poses[i].x << " y: " << poses[i].y << " phi: "
+                  << poses[i].phi << std::endl;
     }
 
     // Initialize image objectand subscriber.
@@ -139,14 +143,13 @@ int main(int argc, char **argv)
         // Use: boxes.coords
         // Use: robotPose.x, robotPose.y, robotPose.phi
 
-        // Transform boxes.coords to desired positions (nodes)
         // start and end node are given as starting position
         // apply heuristic to get cost of edges between nodes
         // build graph
         // solve travelling salesman problem
         // navigate between the nodes in the order from above
 
-        imagePipeline.getTemplateID(boxes);
+        // imagePipeline.getTemplateID(boxes);
         ros::Duration(0.01).sleep();
     }
     return 0;
