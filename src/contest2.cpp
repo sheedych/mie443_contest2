@@ -1,17 +1,19 @@
+#include <algorithm>
+#include <limits>
 #include <cmath>
 #include <boxes.h>
 #include <navigation.h>
 #include <robot_pose.h>
 #include <imagePipeline.h>
 
-#define DISTANCE_TO_BOX 0.5
+#define DISTANCE_TO_BOX 0.2
 
 std::vector<RobotPose> boxesToRobotPoses(Boxes boxes)
 {
-    int num_boxes = boxes.coords.size();
+    int numBoxes = boxes.coords.size();
     std::vector<RobotPose> poses;
 
-    for (int i = 0; i < num_boxes; i++)
+    for (int i = 0; i < numBoxes; i++)
     {
         std::vector<float> coords = boxes.coords[i];
 
@@ -27,6 +29,72 @@ std::vector<RobotPose> boxesToRobotPoses(Boxes boxes)
     }
 
     return poses;
+}
+
+float distanceHeuristic(RobotPose pose1, RobotPose pose2)
+{
+    float dx = pose1.x - pose2.x;
+    float dy = pose1.y - pose2.y;
+    return sqrt(dx * dx + dy * dy);
+}
+
+std::vector<RobotPose> solveTravellingSalesman(std::vector<RobotPose> poses, RobotPose currentPose)
+{
+    poses.insert(poses.begin(), currentPose);
+
+    int numPoses = poses.size();
+    float adjMatrix[numPoses][numPoses];
+
+    for (int i = 0; i < numPoses; i++)
+    {
+        for (int j = 0; j < numPoses; j++)
+        {
+            adjMatrix[i][j] = distanceHeuristic(poses[i], poses[j]);
+        }
+    }
+
+    std::vector<int> poseIndices(numPoses - 1);
+    for (int i = 1; i < numPoses; i++)
+    {
+        poseIndices[i - 1] = i;
+    }
+
+    std::vector<std::vector<int>> possiblePaths;
+
+    do
+    {
+        std::vector<int> path = poseIndices;
+        path.insert(path.begin(), 0);
+        path.push_back(0);
+        possiblePaths.push_back(path);
+    } while (std::next_permutation(poseIndices.begin(), poseIndices.end()));
+
+    std::vector<int> bestPath;
+    float bestPathLength = std::numeric_limits<float>::max();
+
+    for (int i = 0; i < possiblePaths.size(); i++)
+    {
+        float currentPathLength = 0;
+        std::vector<int> path = possiblePaths[i];
+        for (int j = 1; j < path.size(); j++)
+        {
+            currentPathLength += distanceHeuristic(poses[path[j]], poses[path[j - 1]]);
+        }
+
+        if (currentPathLength < bestPathLength)
+        {
+            bestPathLength = currentPathLength;
+            bestPath = path;
+        }
+    }
+
+    std::vector<RobotPose> bestPoses;
+    for (int i = 1; i < bestPath.size(); i++)
+    {
+        bestPoses.push_back(poses[bestPath[i]]);
+    }
+
+    return bestPoses;
 }
 
 int main(int argc, char **argv)
@@ -55,7 +123,10 @@ int main(int argc, char **argv)
 
     std::vector<RobotPose> poses = boxesToRobotPoses(boxes);
 
-    Navigation::moveToGoal(poses[0].x, poses[0].y, poses[0].phi);
+    for (int i = 0; i < poses.size(); i++)
+    {
+        Navigation::moveToGoal(poses[i].x, poses[i].y, poses[i].phi);
+    }
 
     // Initialize image objectand subscriber.
     ImagePipeline imagePipeline(n);
