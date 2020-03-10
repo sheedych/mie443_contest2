@@ -4,7 +4,7 @@
 #include <robot_pose.h>
 #include <imagePipeline.h>
 
-#define DISTANCE_TO_BOX 0.05
+#define DISTANCE_TO_BOX 0.5
 
 std::vector<RobotPose> boxesToRobotPoses(Boxes boxes)
 {
@@ -46,29 +46,23 @@ int main(int argc, char **argv)
         std::cout << "ERROR: could not load coords or templates" << std::endl;
         return -1;
     }
+    // print out box coordinates
     for (int i = 0; i < boxes.coords.size(); ++i)
     {
         std::cout << "Box coordinates: " << std::endl;
         std::cout << i << " x: " << boxes.coords[i][0] << " y: " << boxes.coords[i][1] << " z: "
                   << boxes.coords[i][2] << std::endl;
     }
-
+    // transform box coordinates to robot poses
     std::vector<RobotPose> poses = boxesToRobotPoses(boxes);
 
+    // print out robot poses
     for (int i = 0; i < boxes.coords.size(); ++i)
     {
         std::cout << "Pose coordinates: " << std::endl;
         std::cout << i << " x: " << poses[i].x << " y: " << poses[i].y << " phi: "
                   << poses[i].phi << std::endl;
     }
-    //Navigation::moveToGoal(0, 0, 0);
-    //Navigation::moveToGoal(1, 1, 0);
-    //Navigation::moveToGoal(-1, -1, 0);
-    //Navigation::moveToGoal(1.5, 1, 0);
-
-    Navigation::moveToGoal(poses[0].x, poses[0].y, poses[0].phi);
-    Navigation::moveToGoal(poses[3].x, poses[3].y, poses[3].phi);
-    Navigation::moveToGoal(poses[0].x, poses[0].y, poses[0].phi);
 
     // Initialize image objectand subscriber.
     ImagePipeline imagePipeline(n);
@@ -81,7 +75,6 @@ int main(int argc, char **argv)
         // Use: boxes.coords
         // Use: robotPose.x, robotPose.y, robotPose.phi
 
-        // Transform boxes.coords to desired positions (nodes)
         // start and end node are given as starting position
         // apply heuristic to get cost of edges between nodes
         // build graph
