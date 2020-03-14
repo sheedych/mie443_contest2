@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <iostream>
+#include <fstream>
 #include <limits>
 #include <cmath>
 #include <boxes.h>
@@ -180,6 +182,11 @@ int main(int argc, char **argv)
     int imageCaptureAttempts = 0;
 
     // Execute strategy.
+    std::ofstream myfile;
+    myfile.open ("visiting_order.txt");
+    int timesseen1 = 0;
+    int timesseen2 = 0;
+    int timesseen3 = 0;
     while (ros::ok())
     {
         ros::spinOnce();
@@ -210,14 +217,31 @@ int main(int argc, char **argv)
             if (id >= 0 || imageCaptureAttempts == MAX_IMAGE_CAPTURE_ATTEMPTS)
             {
                 // TODO do something with id.
+                int lastIdx = currentPoseIndex - 1;
+                RobotPose nextPose = bestPath[lastIdx];
                 std::cout << "image id" << id << std::endl;
-
+                if(id == 0) {
+                    timesseen1++;
+                    myfile << "Visited rasin bran " << timesseen1 << " times at "<< nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
+                }
+                else if (id == 1) {
+                    timesseen2++;
+                    myfile << "Visited cinnamon toast crunch " << timesseen2 << " times at " << nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
+                }
+                else if (id == 2) {
+                    timesseen3++;
+                    myfile << "Visited rice krispies " << timesseen3 << " times at " << nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
+                }
+                else {
+                    myfile << "Visited nothing\n";
+                }
                 imageCaptureAttempts = 0;
                 state = MOVING_TO_GOAL;
             }
         }
         else if (state == FINISHED)
         {
+            myfile.close();
             // Do nothing.
         }
         ros::Duration(0.01).sleep();
