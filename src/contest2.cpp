@@ -187,6 +187,7 @@ int main(int argc, char **argv)
     int timesseen1 = 0;
     int timesseen2 = 0;
     int timesseen3 = 0;
+    int timesseen4 = 0;
     while (ros::ok())
     {
         ros::spinOnce();
@@ -223,7 +224,7 @@ int main(int argc, char **argv)
                 if(id == 0) {
                     timesseen1++;
                     std::cout << "Visited raisin bran";
-                    myfile << "Visited rasin bran " << timesseen1 << " times at "<< nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
+                    myfile << "Visited raisin bran " << timesseen1 << " times at "<< nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
                 }
                 else if (id == 1) {
                     timesseen2++;
@@ -236,7 +237,9 @@ int main(int argc, char **argv)
                     myfile << "Visited rice krispies " << timesseen3 << " times at " << nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
                 }
                 else {
-                    myfile << "Visited nothing\n";
+                    timesseen4++;
+                    std::cout << "Visited nothing";
+                    myfile << "Visited nothing " << timesseen4 << " times at " << nextPose.x << " " << nextPose.y << " " << nextPose.phi << "\n";
                 }
                 imageCaptureAttempts = 0;
                 state = MOVING_TO_GOAL;
