@@ -183,7 +183,7 @@ int main(int argc, char **argv)
 
     // Execute strategy.
     std::ofstream myfile;
-    myfile.open ("visiting_order.txt");
+    myfile.open("visiting_order.txt");
     int timesseen1 = 0;
     int timesseen2 = 0;
     int timesseen3 = 0;
@@ -200,7 +200,7 @@ int main(int argc, char **argv)
             Navigation::moveToGoal(nextPose.x, nextPose.y, nextPose.phi);
 
             currentPoseIndex++;
-            if (currentPoseIndex <= numBoxes + 1)
+            if (currentPoseIndex <= numBoxes)
             {
                 state = CAPTURING_IMAGE;
             }
@@ -222,14 +222,17 @@ int main(int argc, char **argv)
                 std::cout << "image id" << id << std::endl;
                 if(id == 0) {
                     timesseen1++;
+                    std::cout << "Visited raisin bran";
                     myfile << "Visited rasin bran " << timesseen1 << " times at "<< nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
                 }
                 else if (id == 1) {
                     timesseen2++;
+                    std::cout << "Visited cinnamon toast crunch";
                     myfile << "Visited cinnamon toast crunch " << timesseen2 << " times at " << nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
                 }
                 else if (id == 2) {
                     timesseen3++;
+                    std::cout << "Visited rice krispies";
                     myfile << "Visited rice krispies " << timesseen3 << " times at " << nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
                 }
                 else {
