@@ -49,6 +49,20 @@ std::vector<RobotPose> boxesToRobotPoses(Boxes boxes)
     return poses;
 }
 
+RobotPose poseToBox(RobotPose currentPose)
+{
+    float poseX = currentPose.x;
+    float poseY = currentPose.y;
+    float posePhi = currentPose.phi;
+
+    float boxPoseX = poseX + DISTANCE_TO_BOX * cos(posePhi);
+    float boxPoseY = poseY + DISTANCE_TO_BOX * sin(posePhi);
+    float boxPosePhi = posePhi - M_PI;
+
+    return RobotPose(boxPoseX, boxPoseY, boxPosePhi);
+}
+
+
 float distanceHeuristic(RobotPose pose1, RobotPose pose2)
 {
     float dx = pose1.x - pose2.x;
@@ -222,24 +236,28 @@ int main(int argc, char **argv)
                 RobotPose nextPose = bestPath[lastIdx];
                 std::cout << "image id" << id << std::endl;
                 if(id == 0) {
+                    RobotPose currentBoxPose = poseToBox(nextPose);
                     timesseen1++;
-                    std::cout << "Visited raisin bran\n";
-                    myfile << "Visited raisin bran " << timesseen1 << " times at "<< nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
+                    std::cout << "Visited Raisin Bran\n";
+                    myfile << "Visited Raisin Bran " << timesseen1 << " time(s) at x = " << currentBoxPose.x << ", y = "<< currentBoxPose.y << ", phi = " << currentBoxPose.phi << "\n";
                 }
                 else if (id == 1) {
+                    RobotPose currentBoxPose = poseToBox(nextPose);                   
                     timesseen2++;
-                    std::cout << "Visited cinnamon toast crunch\n";
-                    myfile << "Visited cinnamon toast crunch " << timesseen2 << " times at " << nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
+                    std::cout << "Visited Cinnamon Toast Crunch\n";
+                    myfile << "Visited Cinnamon Toast Crunch " << timesseen2 << " time(s) at x = " << currentBoxPose.x << ", y = "<< currentBoxPose.y << ", phi = " << currentBoxPose.phi << "\n";
                 }
                 else if (id == 2) {
+                    RobotPose currentBoxPose = poseToBox(nextPose);
                     timesseen3++;
-                    std::cout << "Visited rice krispies\n";
-                    myfile << "Visited rice krispies " << timesseen3 << " times at " << nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
+                    std::cout << "Visited Rice Krispies\n";
+                    myfile << "Visited Rice Krispies " << timesseen3 << " time(s) at x = " << currentBoxPose.x << ", y = "<< currentBoxPose.y << ", phi = " << currentBoxPose.phi << "\n";
                 }
                 else {
+                    RobotPose currentBoxPose = poseToBox(nextPose);
                     timesseen4++;
-                    std::cout << "Visited nothing\n";
-                    myfile << "Visited nothing " << timesseen4 << " times at " << nextPose.x << " " << nextPose.y << " " << nextPose.phi << "\n";
+                    std::cout << "Visited Nothing\n";
+                    myfile << "Visited Nothing " << timesseen4 << " time(s) at " << " time(s) at x = " << currentBoxPose.x << ", y = "<< currentBoxPose.y << ", phi = " << currentBoxPose.phi << "\n";
                 }
                 imageCaptureAttempts = 0;
                 state = MOVING_TO_GOAL;
