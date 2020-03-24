@@ -114,7 +114,7 @@ int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
             {
                 //if(obj.size() >= 4 && scene.size() >= 4) {
                 // previously 70, need to find a balance between detecting the cinamon toast crunch image and detecting something random when nothing is there.
-                if (num_good_matches >= 20)
+                if (num_good_matches >= 33)
                 {
                     std::cout << "Number of Good Mathces = " << num_good_matches << "\n";
                     Mat H = findHomography(obj, scene, RANSAC);
