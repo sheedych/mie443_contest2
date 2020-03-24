@@ -114,8 +114,9 @@ int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
             {
                 //if(obj.size() >= 4 && scene.size() >= 4) {
                 // previously 70, need to find a balance between detecting the cinamon toast crunch image and detecting something random when nothing is there.
-                if (num_good_matches >= 45)
+                if (num_good_matches >= 20)
                 {
+                    std::cout << "Number of Good Mathces = " << num_good_matches << "\n";
                     Mat H = findHomography(obj, scene, RANSAC);
 
                     //--Get the corners from the image_1 (the object to be "detected")
@@ -134,7 +135,6 @@ int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
                     float perimeter = 0.0;
                     for (int i = 0; i < 4; i++)
                     {
-                        std::cout << i << "\n";
                         float euc;
                         if (i == 3)
                         {
@@ -144,17 +144,11 @@ int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
                         {
                             euc = sqrt(pow((scene_corners[i].x - scene_corners[i+1].x), 2) + pow((scene_corners[i].y - scene_corners[i+1].y), 2));
                         }
-                        std::cout << "Euc: " << euc << "\n";
                         perimeter = perimeter + euc;
                     }
 
-                    std::cout << "perimeter = " << perimeter << "\n";
+                    std::cout << "Perimeter = " << perimeter << "\n";
 
-                    if (perimeter < 500)
-                    {
-                        std::cout << "The perimeter of the detected object is too small";
-                        continue;
-                    }
 
                     //-- Draw lines between the corners (the mapped object in the scene - image_2)
                     line(img_matches, scene_corners[0] + Point2f(img_object.cols, 0), scene_corners[1] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
@@ -166,7 +160,14 @@ int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
 
                     cv::imshow("view", img_matches);
                     cv::waitKey(10);
-                    return template_id;
+                    if (perimeter > 300)
+                    {
+                        return template_id;
+                    }
+                    else 
+                    {
+                        std::cout << "The perimeter of the detected object is too small";
+                    }
                 }
                 else
                 {
