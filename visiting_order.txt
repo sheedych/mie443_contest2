@@ -1,0 +1,5 @@
+Visited Nothing 1 time(s) at x = -0.116, y = 0.995, phi = -0.00899998
+Visited Rice Krispies 1 time(s) at x = -1.429, y = 1.797, phi = -0.606
+Visited Nothing 2 time(s) at x = -0.108, y = -0.405, phi = -1.569
+Visited Rice Krispies 2 time(s) at x = 2.07, y = -1.25, phi = 0.791
+Visited Raisin Bran 1 time(s) at x = 1.889, y = 2.043, phi = -1.575

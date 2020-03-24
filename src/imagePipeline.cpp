@@ -110,12 +110,11 @@ int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
             }
 
             //put an if statement around this making sure obj and scene contain at least 4 things
-            //woooo dont forget DONT FORGET or we will FUG up
             try
             {
                 //if(obj.size() >= 4 && scene.size() >= 4) {
                 // previously 70, need to find a balance between detecting the cinamon toast crunch image and detecting something random when nothing is there.
-                if (num_good_matches >= 55)
+                if (num_good_matches >= 45)
                 {
                     Mat H = findHomography(obj, scene, RANSAC);
 
@@ -130,6 +129,31 @@ int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
                     if (!H.empty())
                     {
                         perspectiveTransform(obj_corners, scene_corners, H);
+                    }
+
+                    float perimeter = 0.0;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        std::cout << i << "\n";
+                        float euc;
+                        if (i == 3)
+                        {
+                            euc = sqrt(pow((scene_corners[i].x - scene_corners[0].x), 2) + pow((scene_corners[i].y - scene_corners[0].y), 2));
+                        }
+                        else
+                        {
+                            euc = sqrt(pow((scene_corners[i].x - scene_corners[i+1].x), 2) + pow((scene_corners[i].y - scene_corners[i+1].y), 2));
+                        }
+                        std::cout << "Euc: " << euc << "\n";
+                        perimeter = perimeter + euc;
+                    }
+
+                    std::cout << "perimeter = " << perimeter << "\n";
+
+                    if (perimeter < 500)
+                    {
+                        std::cout << "The perimeter of the detected object is too small";
+                        continue;
                     }
 
                     //-- Draw lines between the corners (the mapped object in the scene - image_2)

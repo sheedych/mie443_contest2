@@ -16,7 +16,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr &msg)
 }
 
 #define DISTANCE_TO_BOX 0.6
-#define MAX_IMAGE_CAPTURE_ATTEMPTS 5
+#define MAX_IMAGE_CAPTURE_ATTEMPTS 7
 
 enum FsmState
 {
