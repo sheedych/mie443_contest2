@@ -257,7 +257,7 @@ int main(int argc, char **argv)
                     RobotPose currentBoxPose = poseToBox(nextPose);
                     timesseen4++;
                     std::cout << "Visited Nothing\n";
-                    myfile << "Visited Nothing " << timesseen4 << " time(s) at " << " time(s) at x = " << currentBoxPose.x << ", y = "<< currentBoxPose.y << ", phi = " << currentBoxPose.phi << "\n";
+                    myfile << "Visited Nothing " << timesseen4 << " time(s) at x = " << currentBoxPose.x << ", y = "<< currentBoxPose.y << ", phi = " << currentBoxPose.phi << "\n";
                 }
                 imageCaptureAttempts = 0;
                 state = MOVING_TO_GOAL;
