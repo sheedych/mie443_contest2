@@ -166,7 +166,7 @@ int ImagePipeline::getTemplateID(Boxes &boxes, LaserData laserData)
                     }
                     else 
                     {
-                        std::cout << "The perimeter of the detected object is too small";
+                        std::cout << "The perimeter of the detected object is too small\n";
                     }
                 }
                 else
