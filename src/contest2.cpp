@@ -223,22 +223,22 @@ int main(int argc, char **argv)
                 std::cout << "image id" << id << std::endl;
                 if(id == 0) {
                     timesseen1++;
-                    std::cout << "Visited raisin bran";
+                    std::cout << "Visited raisin bran\n";
                     myfile << "Visited raisin bran " << timesseen1 << " times at "<< nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
                 }
                 else if (id == 1) {
                     timesseen2++;
-                    std::cout << "Visited cinnamon toast crunch";
+                    std::cout << "Visited cinnamon toast crunch\n";
                     myfile << "Visited cinnamon toast crunch " << timesseen2 << " times at " << nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
                 }
                 else if (id == 2) {
                     timesseen3++;
-                    std::cout << "Visited rice krispies";
+                    std::cout << "Visited rice krispies\n";
                     myfile << "Visited rice krispies " << timesseen3 << " times at " << nextPose.x << " "<< nextPose.y << " " << nextPose.phi << "\n";
                 }
                 else {
                     timesseen4++;
-                    std::cout << "Visited nothing";
+                    std::cout << "Visited nothing\n";
                     myfile << "Visited nothing " << timesseen4 << " times at " << nextPose.x << " " << nextPose.y << " " << nextPose.phi << "\n";
                 }
                 imageCaptureAttempts = 0;
